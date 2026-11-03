@@ -1,4 +1,4 @@
-FROM registry.redhat.io/rhel9/php-82:latest
+FROM registry.access.redhat.com/ubi9/php-82:latest
 
 USER root
 # 1. Dépendances système
