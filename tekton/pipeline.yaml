@@ -1,0 +1,115 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: drupal-demo
+spec:
+  description: Clone le dépôt, construit l'image avec Buildah et la pousse dans le registre interne OpenShift.
+  params:
+    - name: GIT_URL
+      type: string
+      description: URL HTTPS du dépôt à cloner.
+    - name: GIT_REVISION
+      type: string
+      default: main
+      description: Branche, tag ou SHA à construire.
+    - name: IMAGE_NAME
+      type: string
+      default: drupal-demo
+      description: Nom de l'image dans le projet OpenShift où le PipelineRun est lancé.
+  workspaces:
+    - name: work
+  tasks:
+    - name: prepare
+      taskSpec:
+        workspaces:
+          - name: work
+        steps:
+          - name: mkdir
+            image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+            script: |
+              #!/bin/sh
+              set -eu
+              mkdir -p "$(workspaces.work.path)/source" "$(workspaces.work.path)/dockerconfig"
+      workspaces:
+        - name: work
+          workspace: work
+    - name: fetch
+      runAfter: [prepare]
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      workspaces:
+        - name: output
+          workspace: work
+          subPath: source
+      params:
+        - name: URL
+          value: $(params.GIT_URL)
+        - name: REVISION
+          value: $(params.GIT_REVISION)
+    - name: registry-auth
+      runAfter: [fetch]
+      taskSpec:
+        workspaces:
+          - name: dockerconfig
+        steps:
+          - name: write-docker-config
+            image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+            script: |
+              #!/bin/sh
+              set -eu
+              registry="image-registry.openshift-image-registry.svc:5000"
+              token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+              auth="$(printf 'serviceaccount:%s' "${token}" | base64 -w 0)"
+              printf '{"auths":{"%s":{"auth":"%s"}}}\n' "${registry}" "${auth}" \
+                > "$(workspaces.dockerconfig.path)/config.json"
+      workspaces:
+        - name: dockerconfig
+          workspace: work
+          subPath: dockerconfig
+    - name: build
+      runAfter: [fetch, registry-auth]
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+      workspaces:
+        - name: source
+          workspace: work
+          subPath: source
+        - name: dockerconfig
+          workspace: work
+          subPath: dockerconfig
+      params:
+        - name: IMAGE
+          value: image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(params.IMAGE_NAME):latest
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: TLS_VERIFY
+          value: "false"
+  finally:
+    - name: cleanup-auth
+      taskSpec:
+        workspaces:
+          - name: dockerconfig
+        steps:
+          - name: remove-docker-config
+            image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+            script: |
+              #!/bin/sh
+              rm -f "$(workspaces.dockerconfig.path)/config.json"
+      workspaces:
+        - name: dockerconfig
+          workspace: work
+          subPath: dockerconfig

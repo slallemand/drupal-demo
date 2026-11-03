@@ -23,9 +23,15 @@ ENV COMPOSER_MEMORY_LIMIT="-1" \
     COMPOSER_ARGS="--no-blocking"
 RUN /usr/libexec/s2i/assemble
 
-# 4. Préparation pour l'installation web par l'utilisateur final
-RUN cp /opt/app-root/src/web/sites/default/default.settings.php /opt/app-root/src/web/sites/default/settings.php \
-    && chmod 666 /opt/app-root/src/web/sites/default/settings.php \
+# 4. Préparation pour l'installation web par l'utilisateur final.
+# PHP-FPM masque les variables du conteneur si PHP_CLEAR_ENV reste à ON.
+ENV PHP_CLEAR_ENV=OFF
+COPY --chown=1001:0 docker/settings.database.php /opt/app-root/src/web/sites/default/settings.database.php
+RUN settings=/opt/app-root/src/web/sites/default/settings.php \
+    && cp /opt/app-root/src/web/sites/default/default.settings.php "$settings" \
+    && printf "%s\n" "include __DIR__ . '/settings.database.php';" >> "$settings" \
+    && chmod 644 /opt/app-root/src/web/sites/default/settings.database.php \
+    && chmod 666 "$settings" \
     && chmod 777 /opt/app-root/src/web/sites/default
 
 CMD ["/usr/libexec/s2i/run"]

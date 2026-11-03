@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: drupal-demo-
+spec:
+  pipelineRef:
+    name: drupal-demo
+  params:
+    - name: GIT_URL
+      value: https://github.com/slallemand/drupal-demo.git
+    - name: GIT_REVISION
+      value: main
+  workspaces:
+    - name: work
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
