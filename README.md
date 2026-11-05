@@ -79,7 +79,3 @@ Le secret existant doit contenir les clés `database-name`, `database-user` et `
 ```bash
 helm install mariadb charts/mariadb
 ```
-
-## GitHub Actions
-
-`.github/workflows/docker-publish.yml` construit la même image et la pousse vers `ghcr.io` lors d'un push sur `main` ou `master`. Le `Dockerfile` tire `registry.access.redhat.com`, donc ce workflow n'a pas besoin d'identifiants Red Hat. Le chemin utilisé sur le cluster reste le pipeline Tekton.
