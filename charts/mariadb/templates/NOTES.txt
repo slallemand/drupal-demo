@@ -1,0 +1,3 @@
+MariaDB est exposée dans le projet sur le service {{ include "mariadb.fullname" . }}:{{ .Values.service.port }}.
+Le chart Drupal doit utiliser ce nom comme hôte de base (db.host).
+Secret : {{ include "mariadb.secretName" . }}.

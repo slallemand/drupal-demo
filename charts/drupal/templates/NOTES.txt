@@ -1,0 +1,7 @@
+Drupal utilise l'image {{ .Values.image.repository }}:{{ .Values.image.tag }}.
+Base : {{ include "drupal.dbHost" . }}:{{ .Values.db.port }}, secret {{ include "drupal.dbSecret" . }}.
+{{- if .Values.route.enabled }}
+
+URL :
+  oc get route {{ include "drupal.fullname" . }} -o jsonpath='{.spec.host}{"\n"}'
+{{- end }}

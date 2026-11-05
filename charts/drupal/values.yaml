@@ -1,0 +1,43 @@
+replicaCount: 1
+
+image:
+  repository: image-registry.openshift-image-registry.svc:5000/rh-ee-slallema-dev/drupal-demo
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+documentRoot: /web
+phpClearEnv: "OFF"
+
+# Vide : généré au premier install et conservé. Drupal l'exige pour sauter
+# l'écran du mot de passe de base.
+hashSalt: ""
+
+service:
+  httpPort: 8080
+  httpsPort: 8443
+
+# MariaDB est déployée avec ce chart. Les valeurs ci-dessous surchargent charts/mariadb.
+mariadb:
+  enabled: true
+
+# host et existingSecret vides : le service et le secret du sous-chart MariaDB.
+# Les renseigner, et passer mariadb.enabled à false, pour une base déjà installée.
+db:
+  host: ""
+  port: "3306"
+  driver: mysql
+  existingSecret: ""
+  secretKeys:
+    database: database-name
+    username: database-user
+    password: database-password
+
+route:
+  enabled: true
+  host: ""
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

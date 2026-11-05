@@ -1,0 +1,28 @@
+replicaCount: 1
+
+image:
+  repository: registry.redhat.io/rhel10/mariadb-118
+  tag: "1792766568"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  port: 3306
+
+# Secret partagé avec le chart Drupal. Clés identiques au secret manuel drupal-demo-db.
+# Laisser les mots de passe vides : ils sont générés au premier install et conservés ensuite.
+auth:
+  database: drupal
+  username: drupal
+  password: ""
+  rootPassword: ""
+existingSecret: ""
+
+# Le déploiement manuel n'avait pas de volume. Activer pour conserver les données.
+persistence:
+  enabled: false
+  size: 1Gi
+  storageClass: ""
+  mountPath: /var/lib/mysql/data

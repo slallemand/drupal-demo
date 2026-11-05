@@ -1,0 +1,11 @@
+apiVersion: v2
+name: drupal
+description: Déploiement Drupal à partir de l'image déjà construite, avec MariaDB.
+type: application
+version: 0.1.0
+appVersion: "11"
+dependencies:
+  - name: mariadb
+    version: 0.1.0
+    repository: file://../mariadb
+    condition: mariadb.enabled

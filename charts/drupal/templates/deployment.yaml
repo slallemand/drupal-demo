@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "drupal.fullname" . }}
+  labels:
+    {{- include "drupal.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "drupal.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/settings: {{ .Files.Get "files/settings.database.php" | sha256sum }}
+      labels:
+        {{- include "drupal.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: drupal
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+          env:
+            - name: DOCUMENTROOT
+              value: {{ .Values.documentRoot | quote }}
+            - name: PHP_CLEAR_ENV
+              value: {{ .Values.phpClearEnv | quote }}
+            - name: DB_DRIVER
+              value: {{ .Values.db.driver | quote }}
+            - name: DB_HOST
+              value: {{ include "drupal.dbHost" . | quote }}
+            - name: DB_PORT
+              value: {{ .Values.db.port | quote }}
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "drupal.dbSecret" . }}
+                  key: {{ .Values.db.secretKeys.database }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "drupal.dbSecret" . }}
+                  key: {{ .Values.db.secretKeys.username }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "drupal.dbSecret" . }}
+                  key: {{ .Values.db.secretKeys.password }}
+            - name: HASH_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "drupal.fullname" . }}-settings
+                  key: hash-salt
+          volumeMounts:
+            - name: database-settings
+              mountPath: /opt/app-root/src/web/sites/default/settings.database.php
+              subPath: settings.database.php
+            - name: config-sync
+              mountPath: /opt/app-root/src/config/sync
+          readinessProbe:
+            httpGet:
+              path: /core/misc/drupal.js
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: database-settings
+          configMap:
+            name: {{ include "drupal.fullname" . }}-settings
+        - name: config-sync
+          emptyDir: {}
