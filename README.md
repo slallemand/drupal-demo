@@ -4,6 +4,13 @@ Image Drupal 11 (PHP 8.3, S2I) et déploiement OpenShift : MariaDB 11.8 plus Dru
 
 L'image ne contient pas les identifiants. Au démarrage, Drupal lit la base depuis l'environnement du conteneur (`docker/settings.database.php`).
 
+## Prérequis
+
+- `oc`
+- `git`
+- `helm`
+- un accès à un namespace OpenShift (`sandbox.developer.com` suffit)
+
 | Variable | Rôle | Défaut |
 | --- | --- | --- |
 | `DB_NAME` | Nom de la base. Absente, l'installeur web reste disponible. | |
