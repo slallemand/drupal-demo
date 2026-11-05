@@ -30,8 +30,10 @@ COPY --chown=1001:0 docker/settings.database.php /opt/app-root/src/web/sites/def
 RUN settings=/opt/app-root/src/web/sites/default/settings.php \
     && cp /opt/app-root/src/web/sites/default/default.settings.php "$settings" \
     && printf "%s\n" "include __DIR__ . '/settings.database.php';" >> "$settings" \
+    && mkdir -p /opt/app-root/src/config/sync \
     && chmod 644 /opt/app-root/src/web/sites/default/settings.database.php \
     && chmod 666 "$settings" \
-    && chmod 777 /opt/app-root/src/web/sites/default
+    && chmod 777 /opt/app-root/src/web/sites/default \
+    && chmod 775 /opt/app-root/src/config/sync
 
 CMD ["/usr/libexec/s2i/run"]
